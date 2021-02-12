@@ -41,6 +41,7 @@ pub struct ProgressBar<T: Write> {
     units: Units,
     pub total: u64,
     current: u64,
+    base: u64,
     bar_start: String,
     bar_current: String,
     bar_current_n: String,
@@ -112,6 +113,7 @@ impl<T: Write> ProgressBar<T> {
         let mut pb = ProgressBar {
             total: total,
             current: 0,
+            base: 0,
             start_time: SteadyTime::now(),
             units: Units::Default,
             is_finish: false,
@@ -315,6 +317,12 @@ impl<T: Write> ProgressBar<T> {
         self.start_time = SteadyTime::now();
     }
 
+    /// Use the current time as a base for the speed calculation
+    pub fn set_base_time(&mut self) {
+        self.start_time = SteadyTime::now();
+        self.base = self.current;
+    }
+
     fn draw(&mut self) {
         let now = SteadyTime::now();
         if let Some(mrr) = self.max_refresh_rate {
@@ -324,7 +332,7 @@ impl<T: Write> ProgressBar<T> {
         }
 
         let time_elapsed = time_to_std(now - self.start_time);
-        let speed = self.current as f64 / fract_dur(time_elapsed);
+        let speed = (self.current - self.base) as f64 / fract_dur(time_elapsed);
         let width = self.width();
 
         let mut out;
